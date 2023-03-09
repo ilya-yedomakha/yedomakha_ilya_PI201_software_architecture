@@ -1,32 +1,29 @@
 var convict = require('convict');
+const dotenv = require('dotenv');
 
+
+dotenv.config();
 
 var config = convict({
-  env: {
-    doc: 'The application environment.',
-    format: ['production', 'development', 'test'],
-    default: 'env',
-    env: 'NODE_ENV'
-  },
   PROXY_PORT: {
     doc: 'The port to proxy',
     format: 'port',
+    default: 2015,
     env: 'PROXY_PORT'
   },
   API_PORT: {
     doc: 'The port to api',
     format: 'port',
+    default: 2020,
     env: 'API_PORT',
   },
   URL: {
     doc: 'Url',
-    format: 'url',
+    format: String,
+    default: '',
     env: 'URL',
-  },
+  }
 });
-
-var env = config.get('env');
-config.loadFile(`./${env}.json`);
 
 
 module.exports = config;
