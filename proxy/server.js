@@ -5,9 +5,9 @@ var config = require('./config.js');
 
 
 app.get("/", async (req, res) => {
-      var g = await axios.get(`//${config.get("URL")}`);
+      var response = await axios.get(`//${config.get("URL")}`);
       console.log(g.data);
-      res.send("Message from 3000: "+ g.data);
+      res.send("Message from 3000: "+ response.data);
   });
 
 
