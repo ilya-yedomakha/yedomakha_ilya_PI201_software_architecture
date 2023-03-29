@@ -1,41 +1,28 @@
+const mongoose = require("mongoose");
 const express = require("express");
-const MongoClient = require("mongodb").MongoClient;
-const objectId = require("mongodb").ObjectId;
-
+const Schema = mongoose.Schema;
 const app = express();
 const jsonParser = express.json();
 
-const mongoClient = new MongoClient("mongodb://127.0.0.1:27017/", { useUnifiedTopology: true });
-
-let dbClient;
+const employeeScheme = new Schema({ firstName: String, lastName: String, employmentDate: Date }, { versionKey: false });
+const Employee = mongoose.model("Employee", employeeScheme);
 
 app.use(express.static(__dirname + "/public"));
 
-
-mongoClient.connect().then(mongoClient => {
-    dbClient = mongoClient;
-    app.locals.collection = dbClient.db("employeesdb").collection("employees");
-    app.listen(3000, function () {
-        console.log("Сервер очікує підключення...");
+mongoose.connect("mongodb://127.0.0.1:27017/employeesdb", { useUnifiedTopology: true, useNewUrlParser: true })
+    .then(() => {
+        app.listen(3000, function () {
+            console.log("Сервер ожидает подключения...");
+        });
+    })
+    .catch((err) => {
+        console.log(err);
     });
-});
 
 app.get("/api/employees", function (req, res) {
-
-    const collection = req.app.locals.collection;
-    collection.find().toArray().then((employees) => {
-        res.json(employees)
-    }).catch((err) => console.log(err));
-
-});
-
-app.get("/api/employees/:id", function (req, res) {
-    const id = new objectId(req.params.id);
-    const collection = req.app.locals.collection;
-
-    collection.findOne({ _id: id })
-        .then(employee => {
-            res.send(employee);
+    Employee.find({})
+        .then(employees => {
+            res.send(employees);
         })
         .catch(err => {
             console.log(err);
@@ -43,66 +30,60 @@ app.get("/api/employees/:id", function (req, res) {
         });
 });
 
-app.post("/api/employees", jsonParser, function (req, res) {
-    if (!req.body) return res.sendStatus(400);
+app.get("/api/employees/:id", function(req, res){
+    const id = req.params.id;
+    Employee.findOne({_id: id})
+        .then(function(employee){
+            res.send(employee);
+        })
+        .catch(function(err){
+            console.log(err);
+        });
+});
 
+app.post("/api/employees", jsonParser, function(req, res) {
+    if (!req.body) return res.sendStatus(400);
+  
     const firstName = req.body.firstName;
     const lastName = req.body.lastName;
     const employmentDate = req.body.employmentDate;
-    const employee = { firstName: firstName, lastName: lastName, employmentDate: employmentDate };
-
-    const collection = req.app.locals.collection;
-
-    collection.insertOne(employee)
-        .then(result => {
-            res.send(employee);
-        })
-        .catch(err => {
-            console.log(err);
-            res.sendStatus(500);
-        });
-});
+    const employee = new Employee({ firstName: firstName, lastName: lastName, employmentDate: employmentDate });
+  
+    employee.save()
+      .then((employee) => {
+        res.send(employee);
+      })
+      .catch((err) => {
+        console.log(err);
+        res.sendStatus(500);
+      });
+  });
 
 app.delete("/api/employees/:id", function (req, res) {
 
-    const id = new objectId(req.params.id);
-    const collection = req.app.locals.collection;
-
-    collection.findOneAndDelete({ _id: id })
-        .then(result => {
-            let employee = result.value;
-            res.send(employee);
-        })
+    const id = req.params.id;
+    Employee.findByIdAndDelete(id).then(employee => {
+        res.send(employee);
+    })
         .catch(err => {
-            console.log(err);
-            res.status(500).send("Error deleting employee");
+            return console.log(err);
         });
 });
 
 app.put("/api/employees", jsonParser, function (req, res) {
 
     if (!req.body) return res.sendStatus(400);
-    const id = new objectId(req.body.id);
+    const id = req.body.id;
     const firstName = req.body.firstName;
     const lastName = req.body.lastName;
     const employmentDate = req.body.employmentDate;
+    const newEmployee = { firstName: firstName, lastName: lastName, employmentDate: employmentDate };
 
-    const collection = req.app.locals.collection;
-
-    collection.findOneAndUpdate({ _id: id }, { $set: { firstName: firstName, lastName: lastName, employmentDate: employmentDate } },
-        { returnOriginal: false })
-        .then(result => {
-            const employee = result.value;
+    Employee.findOneAndUpdate({ _id: id }, newEmployee, { new: true })
+        .then(employee => {
             res.send(employee);
         })
         .catch(err => {
-            console.log(err);
-            res.status(500).send("Error updating employee");
+            return console.log(err);
         });
-});
-
-// прослушиваем прерывание работы программы (ctrl-c)
-process.on("SIGINT", () => {
-    dbClient.close();
-    process.exit();
 });

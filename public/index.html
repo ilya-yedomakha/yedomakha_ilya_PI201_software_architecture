@@ -63,7 +63,7 @@
             }
         }
 
-        // Получение одного сотрудника
+        // Получение одного працівника
         async function GetEmployee(id) {
             const response = await fetch("/api/employees/" + id, {
                 method: "GET",
@@ -75,11 +75,14 @@
                 form.elements["id"].value = employee._id;
                 form.elements["firstName"].value = employee.firstName;
                 form.elements["lastName"].value = employee.lastName;
-                form.elements["employmentDate"].value = employee.employmentDate;
+                console.log(employee.employmentDate);
+                const isoDate = employee.employmentDate; // "2023-03-16T00:00:00.000Z"
+                const yyyyMmDd = isoDate.substr(0, 10); // "2023-03-16"
+                form.elements["employmentDate"].value = yyyyMmDd;
             }
         }
 
-        // Добавление пользователя
+        // Додавання працівника
         async function CreateEmployee(firstName, lastName, employmentDate) {
 
             const response = await fetch("api/employees", {
@@ -112,9 +115,10 @@
             });
 
             if (response.ok === true) {
+                const employee = await response.json();
                 reset();
-                location.reload();
-                // document.querySelector("tr[data-rowid='" + employee._id + "']").replaceWith(row(employee));
+                // location.reload();
+                document.querySelector("tr[data-rowid='" + employee._id + "']").replaceWith(row(employee));
             }
         }
 
@@ -156,7 +160,9 @@
             tr.append(lastNameTd);
 
             const employmentDateTd = document.createElement("td");
-            employmentDateTd.append(employee.employmentDate);
+            const employmentDate = new Date(employee.employmentDate);
+            const formattedEmploymentDate = employmentDate.toISOString().substr(0, 10);
+            employmentDateTd.append(formattedEmploymentDate);
             tr.append(employmentDateTd);
 
             const linksTd = document.createElement("td");
