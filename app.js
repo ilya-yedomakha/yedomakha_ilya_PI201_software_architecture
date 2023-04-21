@@ -4,12 +4,25 @@ const Schema = mongoose.Schema;
 const app = express();
 const jsonParser = express.json();
 
+const {
+    MONGO_DB_HOSTNAME,
+    MONGO_DB_PORT,
+    MONGO_DB
+} = process.env
+
+const options = {
+    useUnifiedTopology: true,
+    useNewUrlParser: true,
+}
+
+const url = `mongodb://${MONGO_DB_HOSTNAME}:${MONGO_DB_PORT}/${MONGO_DB}`;
+
 const employeeScheme = new Schema({ firstName: String, lastName: String, employmentDate: Date }, { versionKey: false });
 const Employee = mongoose.model("Employee", employeeScheme);
 
 app.use(express.static(__dirname + "/public"));
 
-mongoose.connect("mongodb://127.0.0.1:27017/employeesdb", { useUnifiedTopology: true, useNewUrlParser: true })
+mongoose.connect(url, options)
     .then(() => {
         app.listen(3000, function () {
             console.log("Сервер ожидает подключения...");
@@ -33,10 +46,10 @@ app.get("/api/employees", function (req, res) {
 app.get("/api/employees/:id", function(req, res){
     const id = req.params.id;
     Employee.findOne({_id: id})
-        .then(function(employee){
+        .then(employee=>{
             res.send(employee);
         })
-        .catch(function(err){
+        .catch(err=>{
             console.log(err);
         });
 });
